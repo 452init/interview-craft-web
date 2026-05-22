@@ -12,9 +12,17 @@ except ImportError:
     from models import db, GeneratedQuestion
 
 load_dotenv()
+required_env_vars = ['GEMINI_API_KEY', 'DATABASE_URL']
+for var in required_env_vars:
+    if not os.environ.get(var):
+        print(f"WARNING: {var} environment variable is not set")
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=[
+    "https://interview-craft-web-front.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000"
+])
 
 # Database configuration
 database_url = os.environ.get('DATABASE_URL') or 'sqlite:///local.db'
@@ -40,6 +48,7 @@ if GEMINI_API_KEY:
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     model = None
+    print("WARNING: GEMINI_API_KEY is not set. AI features will not work.")
 
 @app.route('/', methods=['GET'])
 def home():
@@ -110,7 +119,7 @@ def generate_questions():
         
         questions = json.loads(text)
         
-        if not isinstance(questions, list) or len(questions) != 8:
+        if not isinstance(questions, list) or len(questions) != 3:
             raise ValueError("Invalid format returned by AI")
             
         record = None
