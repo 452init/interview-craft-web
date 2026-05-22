@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import "./App.css";
+import { API_BASE_URL } from "./api";
 import { getProfessionProfile } from "./professionOptions";
 
 const FONT_URL = "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 interface Question {
   question: string;

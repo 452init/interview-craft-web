@@ -102,7 +102,7 @@ PYTHONPATH=.. pytest
 1. **Frontend Deployment**: Connect your GitHub repository to Vercel. Vercel will automatically detect the Vite React app in the `frontend` directory. Ensure you set the `Root Directory` in Vercel to `frontend`.
 2. **Backend Deployment**: Create a *separate* Vercel project for the backend. Set the `Root Directory` to `backend`. Vercel will detect `api/index.py` and `vercel.json` and deploy it as a Serverless Python API. Don't forget to add `DATABASE_URL` and `GEMINI_API_KEY` to the Environment Variables settings in Vercel.
 3. Once the backend is deployed, go back to your Frontend Vercel project settings and add an Environment Variable:
-   `VITE_API_URL` = `<your-backend-vercel-url>`
+   `VITE_API_URL` = `<your-backend-vercel-url>` without a trailing slash.
 
 ### Automatic Production Deploys from GitHub
 

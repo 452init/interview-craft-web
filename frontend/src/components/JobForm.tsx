@@ -1,12 +1,11 @@
 import { useMemo, useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../api';
 import { getProfessionProfile } from '../professionOptions';
 
 interface JobFormProps {
   onQuestionsGenerated: (questions: string[]) => void;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function JobForm({ onQuestionsGenerated }: JobFormProps) {
   const [position, setPosition] = useState('Customer Success Manager');
