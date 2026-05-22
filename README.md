@@ -103,3 +103,28 @@ PYTHONPATH=.. pytest
 2. **Backend Deployment**: Create a *separate* Vercel project for the backend. Set the `Root Directory` to `backend`. Vercel will detect `api/index.py` and `vercel.json` and deploy it as a Serverless Python API. Don't forget to add `DATABASE_URL` and `GEMINI_API_KEY` to the Environment Variables settings in Vercel.
 3. Once the backend is deployed, go back to your Frontend Vercel project settings and add an Environment Variable:
    `VITE_API_URL` = `<your-backend-vercel-url>`
+
+### Automatic Production Deploys from GitHub
+
+This repo includes a GitHub Actions workflow at `.github/workflows/deploy-production.yml`.
+Every push to `main` deploys the backend first, then the frontend, both with `vercel --prod`.
+
+Add these GitHub repository secrets before relying on the workflow:
+
+```env
+VERCEL_TOKEN=your_vercel_access_token
+VERCEL_ORG_ID=your_vercel_team_or_user_id
+VERCEL_BACKEND_PROJECT_ID=your_backend_vercel_project_id
+VERCEL_FRONTEND_PROJECT_ID=your_frontend_vercel_project_id
+```
+
+Keep runtime environment variables in Vercel itself:
+
+```env
+# Backend Vercel project
+DATABASE_URL=your_production_database_url
+GEMINI_API_KEY=your_gemini_api_key
+
+# Frontend Vercel project
+VITE_API_URL=https://your-backend-vercel-url
+```

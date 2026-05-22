@@ -2,25 +2,36 @@ import os
 import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from dotenv import load_dotenv
 # pyrefly: ignore [missing-import]
 import google.generativeai as genai
+from sqlalchemy.exc import SQLAlchemyError
 try:
     from .models import db, GeneratedQuestion
 except ImportError:
     from models import db, GeneratedQuestion
 
+load_dotenv()
+
 app = Flask(__name__)
 CORS(app)
 
 # Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'sqlite:///local.db'
+database_url = os.environ.get('DATABASE_URL') or 'sqlite:///local.db'
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
 # Initialize database tables
-with app.app_context():
-    db.create_all()
+try:
+    with app.app_context():
+        db.create_all()
+except SQLAlchemyError as e:
+    print(f"Database initialization skipped: {e}")
 
 # Configure Gemini AI
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
@@ -102,17 +113,22 @@ def generate_questions():
         if not isinstance(questions, list) or len(questions) != 8:
             raise ValueError("Invalid format returned by AI")
             
-        # Save to database
-        new_entry = GeneratedQuestion(
-            position=position,
-            seniority=seniority,
-            focus_area=focus_area,
-            questions=questions
-        )
-        db.session.add(new_entry)
-        db.session.commit()
+        record = None
+        try:
+            new_entry = GeneratedQuestion(
+                position=position,
+                seniority=seniority,
+                focus_area=focus_area,
+                questions=questions
+            )
+            db.session.add(new_entry)
+            db.session.commit()
+            record = new_entry.to_dict()
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            print(f"Question persistence skipped: {e}")
         
-        return jsonify({"questions": questions, "record": new_entry.to_dict()})
+        return jsonify({"questions": questions, "record": record})
         
     except Exception as e:
         print(f"Error generating questions: {e}")

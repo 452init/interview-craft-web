@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import axios from 'axios';
+import { getProfessionProfile } from '../professionOptions';
 
 interface JobFormProps {
   onQuestionsGenerated: (questions: string[]) => void;
@@ -9,43 +10,25 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function JobForm({ onQuestionsGenerated }: JobFormProps) {
   const [position, setPosition] = useState('Customer Success Manager');
-  const [seniority, setSeniority] = useState('Mid-level');
+  const [seniority, setSeniority] = useState('');
   const [focusArea, setFocusArea] = useState('');
 
-  const [focusAreas, setFocusAreas] = useState<string[]>([]);
-  const [loadingAreas, setLoadingAreas] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
 
-  // Debounce for fetching focus areas
+  const professionProfile = useMemo(() => getProfessionProfile(position), [position]);
+  const focusAreas = professionProfile.areas;
+  const seniorityLevels = professionProfile.seniorityLevels;
+
   useEffect(() => {
-    const fetchFocusAreas = async () => {
-      if (!position.trim()) return;
+    if (!seniorityLevels.includes(seniority)) {
+      setSeniority(seniorityLevels[0]);
+    }
 
-      setLoadingAreas(true);
-      setError('');
-      try {
-        const response = await axios.get(`${API_BASE_URL}/api/focus-areas`, {
-          params: { position }
-        });
-        setFocusAreas(response.data.focus_areas || []);
-        if (response.data.focus_areas && response.data.focus_areas.length > 0) {
-          setFocusArea(response.data.focus_areas[0]);
-        }
-      } catch (err) {
-        console.error('Error fetching focus areas:', err);
-        setError('Failed to fetch focus areas. Please try again.');
-      } finally {
-        setLoadingAreas(false);
-      }
-    };
-
-    const timerId = setTimeout(() => {
-      fetchFocusAreas();
-    }, 800); // 800ms debounce
-
-    return () => clearTimeout(timerId);
-  }, [position]);
+    if (!focusAreas.includes(focusArea)) {
+      setFocusArea(focusAreas[0]);
+    }
+  }, [focusArea, focusAreas, seniority, seniorityLevels]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,17 +87,16 @@ export default function JobForm({ onQuestionsGenerated }: JobFormProps) {
               onChange={(e) => setSeniority(e.target.value)}
               required
             >
-              <option value="Junior">Junior</option>
-              <option value="Mid-level">Mid-level</option>
-              <option value="Senior">Senior</option>
-              <option value="Executive">Executive</option>
+              {seniorityLevels.map((level) => (
+                <option key={level} value={level}>{level}</option>
+              ))}
             </select>
           </div>
         </div>
 
         <div className="form-group">
           <label htmlFor="focusArea">
-            Focus Area {loadingAreas && <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>(Loading...)</span>}
+            Focus Area
           </label>
           <div className="select-wrapper">
             <select
@@ -122,9 +104,9 @@ export default function JobForm({ onQuestionsGenerated }: JobFormProps) {
               value={focusArea}
               onChange={(e) => setFocusArea(e.target.value)}
               required
-              disabled={loadingAreas || focusAreas.length === 0}
+              disabled={focusAreas.length === 0}
             >
-              {focusAreas.length === 0 && !loadingAreas && (
+              {focusAreas.length === 0 && (
                 <option value="">No focus areas found</option>
               )}
               {focusAreas.map((area, idx) => (
@@ -134,7 +116,7 @@ export default function JobForm({ onQuestionsGenerated }: JobFormProps) {
           </div>
         </div>
 
-        <button type="submit" className="btn-primary" disabled={generating || loadingAreas || focusAreas.length === 0}>
+        <button type="submit" className="btn-primary" disabled={generating || focusAreas.length === 0}>
           {generating ? <div className="loader"></div> : 'Generate 3 Questions'}
         </button>
       </form>
